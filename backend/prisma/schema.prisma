@@ -1,0 +1,24 @@
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  passwordHash String 
+  createdAt DateTime @default(now())
+  favorites Favorite[]
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tmdbId    Int
+  type      FilmType 
+  rating    Int?     // optional
+  comment   String?  // optional
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum FilmType {
+  movie
+  tv
+}
