@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import moviesRoutes from "./routes/movies.route.js";
+import authRoutes from "./routes/auth.route.js";
 
 export const app = express();
 
@@ -19,8 +20,9 @@ app.get("/api/health", (_request, response) => {
   response.json({ status: "ok", service: "seenflix-api" });
 });
 
-// Enregistrer les routes des films
+// Enregistrer les routes
 app.use("/api/movies", moviesRoutes);
+app.use("/auth", authRoutes);
 
 // Gérer les routes inexistantes
 app.use((_req, res) => {
