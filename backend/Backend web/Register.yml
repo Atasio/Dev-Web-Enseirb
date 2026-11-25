@@ -1,10 +1,18 @@
 info:
   name: Register
   type: http
+  seq: 1
 
 http:
   method: POST
   url: http://localhost:3000/auth/register
+  body:
+    type: json
+    data: |-
+      {
+        "email": "ab.ab@gmail.com",
+        "password" : "123456"
+      }
   auth: inherit
 
 settings:
