@@ -1,80 +1,77 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import MovieCard from "../components/MovieCard.vue";
-import { getMovies } from "../services/movies.service";
+import { useMoviesStore } from "../stores/movies.store";
 
-  // Structure d'un film
-interface Movie {
-  id: number;
-  title: string;
-  poster_path: string | null;
-  vote_average: number;
-}
+const moviesStore = useMoviesStore();
+const {
+  query,
+  popularMovies,
+  searchResults,
+  isSearching,
+  loading,
+  error,
+} = storeToRefs(moviesStore);
 
-  // Variables réactives
-const movies = ref<Movie[]>([]);
-const loading = ref(true);
-const error = ref("");
+const displayedMovies = computed(() =>
+  isSearching.value ? searchResults.value : popularMovies.value,
+);
 
-  // Récupération des films au chargement de la page
-onMounted(async () => {
-  try {
-    const data = await getMovies();
-    movies.value = data.results;
-  } catch (err) {
-    error.value = "Impossible de récupérer les films.";
-    console.error(err);
-  } finally {
-    loading.value = false;
-  }
+const sectionTitle = computed(() =>
+  isSearching.value
+    ? `Résultats pour « ${query.value} »`
+    : "Films populaires",
+);
+
+onMounted(() => {
+  void moviesStore.fetchPopularMovies();
 });
 </script>
 
 <template>
-  <!-- Section d'accueil  -->
-  <section class="hero">
-    <p class="eyebrow">Votre cinéma, au même endroit</p>
-    <h1>Films et séries à découvrir.</h1>
-    <p class="lead">
-      SeenFlix vous permettra de rechercher des œuvres et de conserver vos coups de cœur.
-    </p>
-    <div class="actions">
-      <RouterLink class="button primary" to="/search">
-        Commencer la recherche
-      </RouterLink>
-      <RouterLink class="button secondary" to="/register">
-        Créer un compte
-      </RouterLink>
-    </div>
-  </section>
+  <div class="mx-auto w-full max-w-7xl">
+    <header class="mb-8">
+      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-[#e50914]">
+        Bienvenue sur SeenFlix
+      </p>
+      <h1 class="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+        Films et séries à découvrir
+      </h1>
+    </header>
 
-  <!-- films populaires -->
-  <section class="movies-section">
-    <h2>Films populaires</h2>
+    <section aria-live="polite">
+      <h2 class="mb-6 text-xl font-semibold text-white sm:text-2xl">
+        {{ sectionTitle }}
+      </h2>
 
-    <p v-if="loading">Chargement des films...</p>
+      <p v-if="loading" class="py-16 text-center text-zinc-400">
+        {{ isSearching ? "Recherche en cours..." : "Chargement des films..." }}
+      </p>
 
-    <p v-else-if="error">{{ error }}</p>
+      <p v-else-if="error" class="rounded-lg bg-red-950/40 px-4 py-8 text-center text-red-300">
+        {{ error }}
+      </p>
 
-    <div v-else class="movies-grid">
-      <MovieCard
-        v-for="movie in movies"
-        :key="movie.id"
-        :movie="movie"
-      />
-    </div>
-  </section>
+      <p
+        v-else-if="displayedMovies.length === 0"
+        class="rounded-lg bg-zinc-900 px-4 py-12 text-center text-zinc-400"
+      >
+        {{ isSearching
+          ? "Aucun film ou série ne correspond à cette recherche."
+          : "Aucun film populaire n’est disponible." }}
+      </p>
+
+      <div
+        v-else
+        class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+      >
+        <MovieCard
+          v-for="movie in displayedMovies"
+          :key="`${movie.type}-${movie.id}`"
+          :movie="movie"
+        />
+      </div>
+    </section>
+  </div>
 </template>
-
-<style scoped>
-.movies-section {
-  margin-top: 40px;
-}
-
-.movies-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-</style>
